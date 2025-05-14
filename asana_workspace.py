@@ -1,3 +1,5 @@
+import sys
+
 from data import Config, AsanaUser, AsanaTask, AsanaProject, AsanaCustomField
 import asana
 from asana.rest import ApiException
