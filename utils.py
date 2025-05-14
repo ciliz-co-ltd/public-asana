@@ -33,7 +33,6 @@ def load_config() -> Config:
     if not workspace_gid: missing.append('ASANA_WORKSPACE_GID')
     if not pr_number: missing.append('PR_NUMBER')
     if not pr_title: missing.append('PR_TITLE')
-    if not pr_body: missing.append('PR_BODY')
     if not platform: missing.append('PLATFORM')
 
     if missing:

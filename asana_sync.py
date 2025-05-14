@@ -113,11 +113,11 @@ def validate_and_load_config():
     return config
 
 
-def resolve_root_task(asana_ws: AsanaWorkspace, config) -> AsanaTask:
+def resolve_root_task(asana_ws: AsanaWorkspace, config) -> AsanaTask | None:
     task_urls = utils.extract_asana_task_urls(config.pr.body)
     if not task_urls:
         logger.error("No Asana task URL found in PR body.")
-        sys.exit(1)
+        return None
     task_gid = task_urls[0].rstrip('/').split('/')[-1]
     return asana_ws.get_task_details(task_gid)
 
@@ -183,6 +183,9 @@ def main():
 
     asana_ws = AsanaWorkspace(config)
     root_task = resolve_root_task(asana_ws, config)
+    if root_task is None:
+        logger.info("No tasks found in body")
+        return
     subtasks = [asana_ws.get_task_details(st.gid) for st in root_task.subtasks]
     existing_subtasks = extract_existing_subtasks(subtasks, config.pr.number)
 
