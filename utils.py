@@ -34,7 +34,6 @@ def load_config() -> Config:
     if not pr_number: missing.append('PR_NUMBER')
     if not pr_title: missing.append('PR_TITLE')
     if not pr_body: missing.append('PR_BODY')
-    if not pr_reviewers_raw: missing.append('REVIEWERS')
     if not platform: missing.append('PLATFORM')
 
     if missing:
@@ -42,7 +41,6 @@ def load_config() -> Config:
         raise EnvironmentError("Missing required environment variables")
 
     pr_reviewers = pr_reviewers_raw.split(',')
-
 
     return Config(
         token=token,
