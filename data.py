@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from pydantic import BaseModel
-from typing import List, Dict, Optional, Tuple
+from typing import List, Optional
+
 
 @dataclass
 class PRData:
@@ -15,7 +16,8 @@ class Config(BaseModel):
     token: str
     workspace_gid: str
     pr: PRData
-    
+
+
 @dataclass
 class AsanaUser:
     gid: str
@@ -33,7 +35,8 @@ class AsanaProject:
 class AsanaCustomField:
     name: str
     gid: Optional[str]
-    enum_value: Optional[dict] 
+    enum_value: Optional[dict]
+
 
 @dataclass
 class AsanaTask:

@@ -7,27 +7,48 @@ from data import Config, PRData, AsanaProject
 from dotenv import load_dotenv
 
 import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[logging.StreamHandler(sys.stdout)]
+)
 logger = logging.getLogger(__name__)
 
+
 def load_config() -> Config:
-    load_dotenv(dotenv_path=".env.test")  
+    load_dotenv(dotenv_path=".env.test")
 
     token = os.getenv('ASANA_TOKEN')
     workspace_gid = os.getenv('ASANA_WORKSPACE_GID')
     pr_number = os.getenv('PR_NUMBER')
     pr_title = os.getenv('PR_TITLE')
     pr_body = os.getenv('PR_BODY')
-    pr_reviewers = os.getenv('REVIEWERS').split(',')
+    pr_reviewers_raw = os.getenv('REVIEWERS')
     platform = os.getenv('PLATFORM')
 
-    if not all([token, workspace_gid, pr_number, pr_title, pr_body, platform]):
+    missing = []
+    if not token: missing.append('ASANA_TOKEN')
+    if not workspace_gid: missing.append('ASANA_WORKSPACE_GID')
+    if not pr_number: missing.append('PR_NUMBER')
+    if not pr_title: missing.append('PR_TITLE')
+    if not pr_body: missing.append('PR_BODY')
+    if not pr_reviewers_raw: missing.append('REVIEWERS')
+    if not platform: missing.append('PLATFORM')
+
+    if missing:
+        logger.error(f"Missing required environment variables: {', '.join(missing)}")
         raise EnvironmentError("Missing required environment variables")
+
+    pr_reviewers = pr_reviewers_raw.split(',')
+
 
     return Config(
         token=token,
         workspace_gid=workspace_gid,
-        pr=PRData(number=pr_number, title=pr_title, body=pr_body, platform=platform, reviewers = pr_reviewers)
+        pr=PRData(number=pr_number, title=pr_title, body=pr_body, platform=platform, reviewers=pr_reviewers)
     )
+
 
 def load_reviewer_mapping() -> Dict:
     raw = os.getenv("REVIEWERS_GIDS")
@@ -41,11 +62,13 @@ def load_reviewer_mapping() -> Dict:
         logger.error(f"Error parsing REVIEWERS_GIDS from environment: {e}")
         raise
 
+
 def get_pr_url() -> str:
     url = os.getenv("PR_URL")
     if url:
         return url
     return ""
+
 
 def extract_asana_task_urls(pr_description: str) -> List[str]:
     pattern = re.compile(r"https://app\.asana\.com/\d+/\d+/project/\d+/task/\d+")
@@ -53,11 +76,13 @@ def extract_asana_task_urls(pr_description: str) -> List[str]:
     logger.debug(f"Extracted {len(matches)} Asana task URL(s).")
     return matches
 
+
 def extract_project_gid(url: str) -> str:
     match = re.search(r"/project/(\d+)/task/\d+", url)
     if match:
         return match.group(1)
     return ""
+
 
 def parse_sprint_info(name: str) -> Optional[Tuple[int, datetime, datetime]]:
     pattern = r"Sprint\s+(\d+)\s+\((\d{2}\.\d{2})-(\d{2}\.\d{2})\)"
@@ -80,6 +105,7 @@ def parse_sprint_info(name: str) -> Optional[Tuple[int, datetime, datetime]]:
 
     return sprint_number, start_date, end_date
 
+
 def get_latest_sprint_project(projects: List[AsanaProject]) -> Optional[Tuple[int, datetime, datetime, AsanaProject]]:
     parsed_projects = []
 
@@ -94,10 +120,11 @@ def get_latest_sprint_project(projects: List[AsanaProject]) -> Optional[Tuple[in
 
     return max(parsed_projects, key=lambda x: x[0])
 
+
 def parse_task_title(title: str) -> (bool, Optional[int]):
     pattern = r'^pr(\d+): .+$'
     match = re.match(pattern, title)
     if match:
-        pr_number = match.group(1)  # Only the number part
+        pr_number = match.group(1)
         return True, pr_number
     return False, None
