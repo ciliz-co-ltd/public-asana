@@ -1,4 +1,5 @@
 import sys
+from time import sleep
 
 from data import Config, AsanaUser, AsanaTask, AsanaProject, AsanaCustomField
 import asana
@@ -92,6 +93,7 @@ class AsanaWorkspace:
                     ]
                 )
                 if project_sections_mapping and "Запланировано" in project_sections_mapping:
+                    sleep(3)
                     self.move_task_to_section(task.gid, project_sections_mapping["Запланировано"])
                 logger.info(f"Created subtask '{name}' under task {parent_task_gid}.")
                 return task
