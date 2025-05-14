@@ -23,7 +23,7 @@ def handle_open(
         pr_url: str,
         project_sections_mapping: Dict[str, str]):
     for assignee in reviewers_gids:
-        asana_ws.create_subtask(task, f"pr{pr.number}: {pr.title}", assignee, latest_sprint_gid, fields_config, pr_url,
+        asana_ws.create_subtask(task, f"{pr.platform}:pr{pr.number}: {pr.title}", assignee, latest_sprint_gid, fields_config, pr_url,
                                 project_sections_mapping)
     logger.info(
         f"[OPEN] PR #{pr.number} '{pr.title}' – Created subtasks for reviewers: {reviewers_gids}, Sprint: {latest_sprint_gid}, Fields: {fields_config}, URL: {pr_url}")
@@ -55,7 +55,7 @@ def handle_updated(
     for assignee in to_open_user_gids:
         asana_ws.create_subtask(
             task,
-            f"pr{pr.number}: {pr.title}",
+            f"{pr.platform}:pr{pr.number}: {pr.title}",
             assignee,
             latest_sprint_gid,
             fields_config,
