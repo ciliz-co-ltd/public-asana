@@ -23,7 +23,8 @@ def handle_open(
         pr_url: str,
         project_sections_mapping: Dict[str, str]):
     for assignee in reviewers_gids:
-        asana_ws.create_subtask(task, f"{pr.platform}:pr{pr.number}: {pr.title}", assignee, latest_sprint_gid, fields_config, pr_url,
+        asana_ws.create_subtask(task, f"{pr.platform}:pr{pr.number}: {pr.title}", assignee, latest_sprint_gid,
+                                fields_config, pr_url,
                                 project_sections_mapping)
     logger.info(
         f"[OPEN] PR #{pr.number} '{pr.title}' – Created subtasks for reviewers: {reviewers_gids}, Sprint: {latest_sprint_gid}, Fields: {fields_config}, URL: {pr_url}")
@@ -151,31 +152,6 @@ def resolve_reviewers(config) -> List[str]:
     return [reviewer_mapping[r] for r in config.pr.reviewers if r in reviewer_mapping]
 
 
-def dispatch_action(action: str, context: Dict):
-    if action == "opened":
-        gids_to_open = [gid for gid in context['reviewers_gids'] if gid not in context['gid2task']]
-        handle_open(context['asana_ws'], context['root_task'], context['config'].pr, gids_to_open,
-                    context['latest_sprint_gid'], context['field_config'], utils.get_pr_url(), context['section_map'])
-    elif action == "closed":
-        handle_closed(context['asana_ws'], context['existing_subtasks'], context['config'].pr)
-    elif action == "updated":
-        to_close = [st for st in context['existing_subtasks'] if
-                    st.assignee and st.assignee.gid not in context['reviewers_gids']]
-        to_open = [gid for gid in context['reviewers_gids'] if gid not in context['gid2task']]
-        handle_updated(context['asana_ws'], context['root_task'], to_open, to_close, context['config'].pr,
-                       context['latest_sprint_gid'], context['field_config'], utils.get_pr_url(),
-                       context['section_map'])
-    elif action == "approved":
-        first_gid = context['reviewers_gids'][0] if context['reviewers_gids'] else None
-        handle_approved(context['asana_ws'], context['gid2task'].get(first_gid), context['config'].pr)
-    elif action == "comment":
-        first_gid = context['reviewers_gids'][0] if context['reviewers_gids'] else None
-        handle_comment(context['asana_ws'], context['gid2task'].get(first_gid), context['config'].pr)
-    else:
-        logger.error(f"Unknown action: {action}")
-        sys.exit(1)
-
-
 def main():
     action = get_cli_action()
     config = validate_and_load_config()
@@ -190,17 +166,33 @@ def main():
     reviewers_gids = resolve_reviewers(config)
     gid2task = {st.assignee.gid: st for st in existing_subtasks if st.assignee}
 
-    dispatch_action(action, {
-        "asana_ws": asana_ws,
-        "root_task": root_task,
-        "existing_subtasks": existing_subtasks,
-        "reviewers_gids": reviewers_gids,
-        "gid2task": gid2task,
-        "config": config,
-        "field_config": field_config,
-        "latest_sprint_gid": latest_sprint_gid,
-        "section_map": section_map,
-    })
+    if action == "opened":
+        gids_to_open = [gid for gid in reviewers_gids if gid not in gid2task]
+        handle_open(asana_ws, root_task, config.pr, gids_to_open,
+                    latest_sprint_gid, field_config, utils.get_pr_url(), section_map)
+    elif action == "closed":
+        handle_closed(asana_ws, existing_subtasks, config.pr)
+    elif action == "updated":
+        to_close = [st for st in existing_subtasks if
+                    st.assignee and st.assignee.gid not in reviewers_gids]
+        to_open = [gid for gid in reviewers_gids if gid not in gid2task]
+        handle_updated(asana_ws, root_task, to_open, to_close, config.pr,
+                       latest_sprint_gid, field_config, utils.get_pr_url(),
+                       section_map)
+    elif action == "approved":
+        first_gid = reviewers_gids[0] if reviewers_gids else None
+        if gid2task.get(first_gid):
+            handle_approved(asana_ws, gid2task.get(first_gid), config.pr)
+        else:
+            logger.info("Ignored: no task for reviewer")
+    elif action == "comment":
+        first_gid = reviewers_gids[0] if reviewers_gids else None
+        if gid2task.get(first_gid):
+            handle_comment(asana_ws, gid2task.get(first_gid), config.pr)
+        logger.info("Ignored: no task for reviewer")
+    else:
+        logger.error(f"Unknown action: {action}")
+        sys.exit(1)
 
 
 if __name__ == "__main__":
