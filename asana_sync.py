@@ -123,9 +123,9 @@ def resolve_root_task(asana_ws: AsanaWorkspace, config) -> AsanaTask:
     return asana_ws.get_task_details(task_gid)
 
 
-def extract_existing_subtasks(subtasks: List[AsanaTask], pr_number: str) -> List[AsanaTask]:
+def extract_existing_subtasks(subtasks: List[AsanaTask], pr_number: str, platform: str) -> List[AsanaTask]:
     def extract_prs(st):
-        matched, pr_num = utils.parse_task_title(st.name)
+        matched, pr_num = utils.parse_task_title(st.name, platform)
         return (matched, pr_num, st)
 
     parsed = map(extract_prs, subtasks)
@@ -160,7 +160,7 @@ def main():
     asana_ws = AsanaWorkspace(config)
     root_task = resolve_root_task(asana_ws, config)
     subtasks = [asana_ws.get_task_details(st.gid) for st in root_task.subtasks]
-    existing_subtasks = extract_existing_subtasks(subtasks, config.pr.number)
+    existing_subtasks = extract_existing_subtasks(subtasks, config.pr.number, config.pr.platform)
 
     field_config, latest_sprint_gid, section_map = resolve_field_config(asana_ws, root_task)
     reviewers_gids = resolve_reviewers(config)
@@ -180,9 +180,8 @@ def main():
                        latest_sprint_gid, field_config, utils.get_pr_url(),
                        section_map)
     elif action == "approved":
-        logger.info(f"Reviewers: {reviewers_gids}, raw: {config.pr.reviewers}")
+        logger.info(f"Reviewers: {config.pr.reviewers}")
         first_gid = reviewers_gids[0] if reviewers_gids else None
-        logger.info(f"Gid2Task: {gid2task}, Subtasks:{existing_subtasks}")
         if gid2task.get(first_gid):
             handle_approved(asana_ws, gid2task.get(first_gid), config.pr)
         else:

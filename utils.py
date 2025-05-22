@@ -119,8 +119,8 @@ def get_latest_sprint_project(projects: List[AsanaProject]) -> Optional[Tuple[in
     return max(parsed_projects, key=lambda x: x[0])
 
 
-def parse_task_title(title: str) -> (bool, Optional[int]):
-    pattern = r'^pr(\d+): .+$'
+def parse_task_title(title: str, platform: str) -> (bool, Optional[int]):
+    pattern = rf'^{platform}:pr(\d+): .+$'
     match = re.match(pattern, title)
     if match:
         pr_number = match.group(1)
