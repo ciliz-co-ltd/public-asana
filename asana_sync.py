@@ -180,6 +180,7 @@ def main():
                        latest_sprint_gid, field_config, utils.get_pr_url(),
                        section_map)
     elif action == "approved":
+        logger.info(f"Reviewers: {reviewers_gids}, raw: {config.pr.reviewers}")
         first_gid = reviewers_gids[0] if reviewers_gids else None
         if gid2task.get(first_gid):
             handle_approved(asana_ws, gid2task.get(first_gid), config.pr)
