@@ -156,7 +156,7 @@ def main():
     action = get_cli_action()
     config = validate_and_load_config()
     logger.info(f"Action: {action}\nPR #{config.pr.number} Title: {config.pr.title}")
-
+    logger.info(f"Body: \"{config.pr.body}\"")
     asana_ws = AsanaWorkspace(config)
     root_task = resolve_root_task(asana_ws, config)
     subtasks = [asana_ws.get_task_details(st.gid) for st in root_task.subtasks]
